@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"math/rand"
 	"strconv"
 	"time"
 
@@ -15,6 +16,7 @@ func main() {
 	c := new(crawler.Crawl)
 	fmt.Println("****start crawl****")
 	for page := 1; ; page++ {
+		fmt.Println("<crawling page：", page, ">")
 		pageItems, err := c.CrawlPage(page)
 		if err != nil {
 			fmt.Println("<--error-->", err.Error())
@@ -43,13 +45,13 @@ func main() {
 			}
 
 			collection.Insert(detail)
-			time.Sleep(5 * time.Second)
+			time.Sleep(time.Duration(rand.Intn(5)) * time.Second)
 		}
 
 		if len(pageItems) < 30 {
 			break
 		}
-		time.Sleep(10 * time.Second)
+		time.Sleep(time.Duration(rand.Intn(5)) * time.Second)
 	}
 }
 
