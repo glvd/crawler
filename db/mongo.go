@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	dbURL = "mongodb://localhost:27017/?readPreference=primary"
+	dbURL = "mongodb://localhost:27017/bus"
 )
 
 // GlobalMgoSession ...

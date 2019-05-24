@@ -58,7 +58,6 @@ func (c *Crawl) CrawlDetail(no string, thumb string) (*schema.Video, error) {
 	}
 
 	doc := soup.HTMLParse(res)
-	fmt.Print(doc)
 	details := doc.Find("div", "class", "container").Find("div", "class", "movie")
 	coverInfo := details.Find("div", "class", "screencap").Find("a").Attrs()
 	infos := details.Find("div", "class", "info").Children()

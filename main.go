@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"strconv"
 	"time"
 
@@ -12,9 +13,11 @@ import (
 
 func main() {
 	c := new(crawler.Crawl)
+	fmt.Println("****start crawl****")
 	for page := 1; ; page++ {
 		pageItems, err := c.CrawlPage(page)
 		if err != nil {
+			fmt.Println("<--error-->", err.Error())
 			failedLog(err.Error(), "page", strconv.Itoa(page))
 			time.Sleep(1 * time.Minute)
 			continue
@@ -22,7 +25,6 @@ func main() {
 
 		for _, item := range pageItems {
 			video := &schema.Video{}
-
 			session := db.CloneSession()
 			defer session.Close()
 			collection := session.DB("bus").C("videos")
@@ -31,9 +33,10 @@ func main() {
 			if video.No == item.No {
 				continue
 			}
-
+			fmt.Println("-------- page: ", page, " no: ", item.No, "---------")
 			detail, err := c.CrawlDetail(item.No, item.Thumb)
 			if err != nil {
+				fmt.Println("<--error-->", err.Error())
 				failedLog(err.Error(), "detail", item.No)
 				time.Sleep(30 * time.Second)
 				continue
