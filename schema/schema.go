@@ -11,15 +11,22 @@ type Video struct {
 	Publisher   string   `bson:"publisher"`
 	Director    string   `bson:"director"`
 	Series      string   `bson:"series"`
-	Tag         []string `bson:"tags"`
-	Actress     []string `bson:"actress"`
+	Tags        []string `bson:"tags"`
+	Stars       []string `bson:"stars"`
 	MagnetLinks []string `bson:"magnetLinks"`
 }
 
-// Actress ...
-type Actress struct {
+// Stars ...
+type Stars struct {
 	Name   string
 	Age    int
 	Avatar string
 	Videos []string
+}
+
+// Failed ...
+type Failed struct {
+	Reason string `bson:"reason"`
+	Part   string `bson:"part"`
+	No     string `bson:"no"`
 }

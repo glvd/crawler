@@ -1,6 +1,8 @@
 package db
 
 import (
+	"time"
+
 	"github.com/globalsign/mgo"
 )
 
@@ -8,22 +10,20 @@ const (
 	dbURL = "mongodb://localhost:27017/?readPreference=primary"
 )
 
-// Dial ...
-func Dial() *mgo.Session {
-	session, err := mgo.Dial(dbURL)
+// GlobalMgoSession ...
+var GlobalMgoSession *mgo.Session
+
+func init() {
+	globalMgoSession, err := mgo.DialWithTimeout(dbURL, 10*time.Second)
 	if err != nil {
 		panic(err)
 	}
-	defer session.Close()
-
-	// Optional. Switch the session to a monotonic behavior.
-	session.SetMode(mgo.Monotonic, true)
-	return session
+	GlobalMgoSession = globalMgoSession
+	GlobalMgoSession.SetMode(mgo.Monotonic, true)
+	GlobalMgoSession.SetPoolLimit(300)
 }
 
-// Collection ...
-func Collection(collection string) *mgo.Collection {
-	session := Dial()
-	c := session.DB("bus").C(collection)
-	return c
+// CloneSession ...
+func CloneSession() *mgo.Session {
+	return GlobalMgoSession.Clone()
 }
