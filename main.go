@@ -33,9 +33,10 @@ func main() {
 			collection.Find(bson.M{"no": item.No}).One(&video)
 
 			if video.No == item.No {
+				fmt.Println("<crawled page: ", page, " no: ", item.No, ">")
 				continue
 			}
-			fmt.Println("-------- page: ", page, " no: ", item.No, "---------")
+			fmt.Println("<----crawling no: ", item.No, " ---->")
 			detail, err := c.CrawlDetail(item.No, item.Thumb)
 			if err != nil {
 				fmt.Println("<--error-->", err.Error())
