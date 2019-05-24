@@ -19,8 +19,6 @@ func init() {
 		panic(err)
 	}
 	GlobalMgoSession = globalMgoSession
-	GlobalMgoSession.SetMode(mgo.Monotonic, true)
-	GlobalMgoSession.SetPoolLimit(300)
 }
 
 // CloneSession ...
