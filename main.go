@@ -2,14 +2,13 @@ package main
 
 import (
 	"fmt"
-	"math/rand"
 	"os"
 	"strconv"
 	"time"
 
-	db "github.com/bb/crawler/db"
-	crawler "github.com/bb/crawler/lib/crawl"
-	schema "github.com/bb/crawler/schema"
+	db "github.com/bus_crawler/db"
+	crawler "github.com/bus_crawler/lib/crawl"
+	schema "github.com/bus_crawler/schema"
 	"github.com/globalsign/mgo/bson"
 )
 
@@ -40,12 +39,11 @@ func main() {
 			if err != nil {
 				fmt.Println("<--error-->", err.Error())
 				failedLog(err.Error(), "detail", item.No)
-				time.Sleep(30 * time.Second)
+				time.Sleep(15 * time.Second)
 				continue
 			}
 
 			collection.Insert(detail)
-			time.Sleep(time.Duration(rand.Intn(5)) * time.Second)
 		}
 
 		if len(pageItems) < 30 {

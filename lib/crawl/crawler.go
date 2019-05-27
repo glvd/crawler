@@ -7,8 +7,10 @@ import (
 	"net/http"
 	"strings"
 
+	underscore "github.com/ahl5esoft/golang-underscore"
 	"github.com/anaskhan96/soup"
-	schema "github.com/bb/crawler/schema"
+	chromedp "github.com/bus_crawler/lib/headless"
+	schema "github.com/bus_crawler/schema"
 )
 
 const (
@@ -51,8 +53,7 @@ func (c *Crawl) CrawlDetail(no string, thumb string) (*schema.Video, error) {
 	var err error
 	video := &schema.Video{}
 	detailURL := fmt.Sprintf("%s/%s", url, no)
-	soup.Get(detailURL)
-	res, err := soup.Get(detailURL)
+	res, err := chromedp.LoadHTML(detailURL)
 	if err != nil {
 		return video, err
 	}
@@ -61,7 +62,7 @@ func (c *Crawl) CrawlDetail(no string, thumb string) (*schema.Video, error) {
 	details := doc.Find("div", "class", "container").Find("div", "class", "movie")
 	coverInfo := details.Find("div", "class", "screencap").Find("a").Attrs()
 	infos := details.Find("div", "class", "info").Children()
-
+	magnetInfo := doc.Find("div", "class", "container").Find("table", "id", "magnet-table").FindAll("a")
 	video.Thumb, err = getImg(thumb)
 	video.Cover, err = getImg(coverInfo["href"])
 	video.Tags = buildDesc(details.FindAll("span", "class", "genre"))
@@ -69,6 +70,14 @@ func (c *Crawl) CrawlDetail(no string, thumb string) (*schema.Video, error) {
 	for _, info := range infos {
 		labelMatch(info, video)
 	}
+	var magnetLinks []string
+	for _, magnetLink := range magnetInfo {
+		attr := magnetLink.Attrs()
+		if attr["href"] != "" {
+			magnetLinks = append(magnetLinks, attr["href"])
+		}
+	}
+	underscore.Chain(magnetLinks).Uniq(nil).Value(&video.MagnetLinks)
 	return video, err
 }
 

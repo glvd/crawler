@@ -1,20 +1,21 @@
 package crawler_test
 
-type listItem struct {
-	thumbnail string
-	no        string
-}
+import (
+	"testing"
 
-type video struct {
-	no       string
-	thumb    string
-	cover    string
-	date     string
-	length   string
-	director string
-	actress  []string
-}
+	crawler "github.com/bus_crawler/lib/crawl"
+)
 
 const (
-	url = "https://www.seedmm.life"
+	no    = "JUFE-062"
+	thumb = "https://pics.javbus.com/thumb/747o.jpg"
 )
+
+func TestCrawlDetail(t *testing.T) {
+	c := new(crawler.Crawl)
+	detail, err := c.CrawlDetail(no, thumb)
+	if err != nil {
+		t.Log("err", err)
+	}
+	t.Log(detail)
+}
