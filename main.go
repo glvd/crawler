@@ -15,6 +15,8 @@ import (
 
 func main() {
 	c := new(crawler.Crawl)
+	session := db.CloneSession()
+	defer session.Clone()
 	fmt.Println("****start crawl****")
 	for page := 1; ; page++ {
 		pageItems, err := c.CrawlPage(page)
@@ -25,10 +27,8 @@ func main() {
 			time.Sleep(1 * time.Minute)
 			continue
 		}
-
 		for _, item := range pageItems {
 			video := &schema.Video{}
-			session := db.CloneSession()
 			collection := session.DB("bus").C("videos")
 			collection.Find(bson.M{"no": item.No}).One(&video)
 			if video.No == item.No {
@@ -45,7 +45,6 @@ func main() {
 			}
 
 			collection.Insert(detail)
-			session.Close()
 			time.Sleep(time.Duration(rand.Intn(5)) * time.Second)
 		}
 
