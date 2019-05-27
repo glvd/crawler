@@ -6,9 +6,9 @@ import (
 	"strconv"
 	"time"
 
-	db "github.com/bus_crawler/db"
-	crawler "github.com/bus_crawler/lib/crawl"
-	schema "github.com/bus_crawler/schema"
+	db "github.com/crawler/db"
+	crawler "github.com/crawler/lib/crawl"
+	schema "github.com/crawler/schema"
 	"github.com/globalsign/mgo/bson"
 )
 

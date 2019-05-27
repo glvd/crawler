@@ -9,8 +9,8 @@ import (
 
 	underscore "github.com/ahl5esoft/golang-underscore"
 	"github.com/anaskhan96/soup"
-	chromedp "github.com/bus_crawler/lib/headless"
-	schema "github.com/bus_crawler/schema"
+	chromedp "github.com/crawler/lib/headless"
+	schema "github.com/crawler/schema"
 )
 
 const (
