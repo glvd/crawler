@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/anaskhan96/soup"
-	schema "github.com/bb/crawler/schema"
+	schema "github.com/crawler/schema"
 )
 
 const (
@@ -19,35 +19,69 @@ const (
 type Crawl struct {
 }
 
+// PageItems ...
+type PageItems struct {
+	URL  string
+	Name string
+}
+
 // ListItems ...
 type ListItems struct {
 	No    string
 	Thumb string
+	Title string
 }
 
-// CrawlPage ...
-func (c *Crawl) CrawlPage(page int) ([]ListItems, error) {
-	listURL := fmt.Sprintf("%s/page/%d", url, page)
+// CrawlActress ...
+func (c *Crawl) CrawlActress(aURL string, page int) ([]ListItems, error) {
+	listURL := fmt.Sprintf("%s/%d", aURL, page)
 	resp, err := soup.Get(listURL)
 	if err != nil {
 		return nil, err
 	}
 	doc := soup.HTMLParse(resp)
-	infos := doc.Find("div", "id", "waterfall").FindAll("a")
+	infos := doc.Find("div", "id", "waterfall").FindAll("a", "class", "movie-box")
 	list := []ListItems{}
 	for _, info := range infos {
-		videoInfo := info.Find("div", "class", "photo-frame").Find("img").Attrs()
+		thumbInfo := info.Find("div", "class", "photo-frame").Find("img").Attrs()
 		item := ListItems{
-			Thumb: videoInfo["src"],
+			Thumb: thumbInfo["src"],
 			No:    info.Find("div", "class", "photo-info").Find("date").Text(),
+			Title: info.Find("div", "class", "photo-info").Find("span").Text(),
 		}
 		list = append(list, item)
 	}
 	return list, nil
 }
 
+// CrawlPage ...
+func (c *Crawl) CrawlPage(page int, mode string) ([]PageItems, error) {
+	items := []PageItems{}
+	var actressURL string
+	if mode == "2" {
+		actressURL = fmt.Sprintf("%s/uncensored/actresses/%d", url, page)
+	} else {
+		actressURL = fmt.Sprintf("%s/actresses/%d", url, page)
+	}
+	resp, err := soup.Get(actressURL)
+	if err != nil {
+		return items, err
+	}
+	doc := soup.HTMLParse(resp)
+	infos := doc.Find("div", "id", "waterfall").FindAll("div", "class", "item")
+	for _, info := range infos {
+		link := info.Find("a").Attrs()
+		name := info.Find("div", "class", "photo-info").Find("span").Text()
+		pageItem := PageItems{link["href"], name}
+
+		items = append(items, pageItem)
+	}
+
+	return items, nil
+}
+
 // CrawlDetail ...
-func (c *Crawl) CrawlDetail(no string, thumb string) (*schema.Video, error) {
+func (c *Crawl) CrawlDetail(no string, thumb string, title string) (*schema.Video, error) {
 	var err error
 	video := &schema.Video{}
 	detailURL := fmt.Sprintf("%s/%s", url, no)
@@ -64,6 +98,7 @@ func (c *Crawl) CrawlDetail(no string, thumb string) (*schema.Video, error) {
 
 	video.Thumb, err = getImg(thumb)
 	video.Cover, err = getImg(coverInfo["href"])
+	video.Title = title
 	video.Tags = buildDesc(details.FindAll("span", "class", "genre"))
 	video.Stars = buildDesc(details.FindAll("div", "class", "star-name"))
 	for _, info := range infos {

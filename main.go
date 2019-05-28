@@ -7,52 +7,88 @@ import (
 	"strconv"
 	"time"
 
-	db "github.com/bb/crawler/db"
-	crawler "github.com/bb/crawler/lib/crawl"
-	schema "github.com/bb/crawler/schema"
+	db "github.com/crawler/db"
+	crawler "github.com/crawler/lib/crawl"
+	schema "github.com/crawler/schema"
 	"github.com/globalsign/mgo/bson"
 )
 
+var (
+	mode string
+)
+
 func main() {
+	fmt.Println("选择爬虫模式: 1.有码 2.无码 默认：有码")
+	fmt.Scanln(&mode)
 	c := new(crawler.Crawl)
-	session := db.CloneSession()
-	defer session.Clone()
 	fmt.Println("****start crawl****")
 	for page := 1; ; page++ {
-		pageItems, err := c.CrawlPage(page)
-		fmt.Println("<crawling page：", page, " items: ", len(pageItems), ">")
+		actresses, err := c.CrawlPage(page, mode)
+		fmt.Println("<crawling page：", page, " items: ", len(actresses), ">")
 		if err != nil {
 			fmt.Println("<--error-->", err.Error())
 			failedLog(err.Error(), "page", strconv.Itoa(page))
-			time.Sleep(1 * time.Minute)
+			time.Sleep(15 * time.Second)
+			continue
+		}
+		for _, actress := range actresses {
+			crawlActress(c, actress)
+		}
+		if len(actresses) < 50 {
+			break
+		}
+	}
+	os.Exit(1)
+}
+
+func crawlActress(c *crawler.Crawl, actress crawler.PageItems) {
+	url := actress.URL
+	name := actress.Name
+	fmt.Println("<crawling actress: ", name, ">")
+	session := db.CloneSession()
+	defer session.Clone()
+	for page := 1; ; page++ {
+		pageItems, err := c.CrawlActress(url, page)
+		if err != nil {
+			fmt.Println("<--error-->", err.Error())
+			failedLog(err.Error(), "page", strconv.Itoa(page))
+			time.Sleep(10 * time.Second)
 			continue
 		}
 		for _, item := range pageItems {
-			video := &schema.Video{}
-			collection := session.DB("bus").C("videos")
-			collection.Find(bson.M{"no": item.No}).One(&video)
-			if video.No == item.No {
-				fmt.Println("<crawled page: ", page, " no: ", item.No, ">")
+			checkRes := checkCrawled(item.No)
+			if checkRes == true {
+				fmt.Println("<crawled no: ", item.No, ">")
 				continue
 			}
 			fmt.Println("<----crawling no: ", item.No, " ---->")
-			detail, err := c.CrawlDetail(item.No, item.Thumb)
+			detail, err := c.CrawlDetail(item.No, item.Thumb, item.Title)
 			if err != nil {
 				fmt.Println("<--error-->", err.Error())
 				failedLog(err.Error(), "detail", item.No)
 				time.Sleep(30 * time.Second)
 				continue
 			}
-
+			collection := session.DB("bus").C("videos")
 			collection.Insert(detail)
-			time.Sleep(time.Duration(rand.Intn(5)) * time.Second)
+			time.Sleep(time.Duration(rand.Intn(3)) * time.Second)
 		}
-
 		if len(pageItems) < 30 {
 			break
 		}
 	}
-	os.Exit(1)
+}
+
+func checkCrawled(no string) bool {
+	session := db.CloneSession()
+	defer session.Clone()
+	video := &schema.Video{}
+	collection := session.DB("bus").C("videos")
+	collection.Find(bson.M{"no": no}).One(&video)
+	if video.No == no {
+		return true
+	}
+	return false
 }
 
 func failedLog(reason string, part string, no string) {
