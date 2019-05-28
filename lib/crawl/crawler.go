@@ -115,7 +115,7 @@ func getImg(url string, no string, t string) (string, error) {
 		return "", err
 	}
 	defer resp.Body.Close()
-	dir := fmt.Sprintf("pic/%s", no)
+	dir := fmt.Sprintf("images/%s", no)
 	err = makeDir(dir)
 	fileName := fmt.Sprintf("%s/%s.jpg", dir, t)
 
