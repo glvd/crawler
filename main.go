@@ -14,7 +14,8 @@ import (
 )
 
 var (
-	mode string
+	mode      string
+	skipCount = 0
 )
 
 func main() {
@@ -44,9 +45,10 @@ func main() {
 func crawlActress(c *crawler.Crawl, actress crawler.PageItems) {
 	url := actress.URL
 	name := actress.Name
-	fmt.Println("<crawling actress: ", name, ">")
 	session := db.CloneSession()
 	defer session.Clone()
+	fmt.Println("<crawling actress: ", name, ">")
+
 	for page := 1; ; page++ {
 		pageItems, err := c.CrawlActress(url, page)
 		if err != nil {
@@ -58,7 +60,8 @@ func crawlActress(c *crawler.Crawl, actress crawler.PageItems) {
 		for _, item := range pageItems {
 			checkRes := checkCrawled(item.No)
 			if checkRes == true {
-				fmt.Println("<crawled no: ", item.No, ">")
+				fmt.Println("<crawled actress: ", name, "no: ", item.No, ">")
+				skipCount++
 				continue
 			}
 			fmt.Println("<----crawling no: ", item.No, " ---->")

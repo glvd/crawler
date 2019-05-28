@@ -1,10 +1,12 @@
 package crawler
 
 import (
-	"encoding/base64"
+	"bytes"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
+	"os"
 	"strings"
 
 	"github.com/anaskhan96/soup"
@@ -96,8 +98,8 @@ func (c *Crawl) CrawlDetail(no string, thumb string, title string) (*schema.Vide
 	coverInfo := details.Find("div", "class", "screencap").Find("a").Attrs()
 	infos := details.Find("div", "class", "info").Children()
 
-	video.Thumb, err = getImg(thumb)
-	video.Cover, err = getImg(coverInfo["href"])
+	video.Thumb, err = getImg(thumb, no, "thumb")
+	video.Cover, err = getImg(coverInfo["href"], no, "poster")
 	video.Title = title
 	video.Tags = buildDesc(details.FindAll("span", "class", "genre"))
 	video.Stars = buildDesc(details.FindAll("div", "class", "star-name"))
@@ -107,15 +109,34 @@ func (c *Crawl) CrawlDetail(no string, thumb string, title string) (*schema.Vide
 	return video, err
 }
 
-func getImg(url string) (string, error) {
+func getImg(url string, no string, t string) (string, error) {
 	resp, err := http.Get(url)
 	if err != nil {
 		return "", err
 	}
 	defer resp.Body.Close()
+	dir := fmt.Sprintf("pic/%s", no)
+	err = makeDir(dir)
+	fileName := fmt.Sprintf("%s/%s.jpg", dir, t)
+
+	out, err := os.Create(fileName)
+	defer out.Close()
 	pix, err := ioutil.ReadAll(resp.Body)
-	encodeString := base64.StdEncoding.EncodeToString(pix)
-	return fmt.Sprintf("data:image/png;base64,%s", encodeString), err
+	_, err = io.Copy(out, bytes.NewReader(pix))
+
+	return fileName, err
+}
+
+func makeDir(dir string) error {
+
+	// check
+	if _, err := os.Stat(dir); err != nil {
+		err := os.MkdirAll(dir, 0711)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func buildDesc(v []soup.Root) []string {
