@@ -64,7 +64,7 @@ func crawlActress(c *crawler.Crawl, actress crawler.PageItems) {
 				skipCount++
 				continue
 			}
-			fmt.Println("<----crawling no: ", item.No, " ---->")
+			fmt.Println("<crawling actress: ", name, "no: ", item.No, ">")
 			detail, err := c.CrawlDetail(item.No, item.Thumb, item.Title)
 			if err != nil {
 				fmt.Println("<--error-->", err.Error())
