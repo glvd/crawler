@@ -15,6 +15,7 @@ type Video struct {
 	Tags        []string `bson:"tags"`
 	Stars       []string `bson:"stars"`
 	MagnetLinks []string `bson:"magnetLinks"`
+	Uncensored  bool     `bson:"uncensored"`
 }
 
 // Stars ...

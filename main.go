@@ -16,11 +16,13 @@ import (
 var (
 	mode      string
 	skipCount = 0
+	count     = 0
 )
 
 func main() {
 	fmt.Println("选择爬虫模式: 1.有码 2.无码 默认：有码")
 	fmt.Scanln(&mode)
+
 	c := new(crawler.Crawl)
 	fmt.Println("****start crawl****")
 	for page := 1; ; page++ {
@@ -45,11 +47,11 @@ func main() {
 func crawlActress(c *crawler.Crawl, actress crawler.PageItems) {
 	url := actress.URL
 	name := actress.Name
-	session := db.CloneSession()
-	defer session.Clone()
+
 	fmt.Println("<crawling actress: ", name, ">")
 
 	for page := 1; ; page++ {
+
 		pageItems, err := c.CrawlActress(url, page)
 		if err != nil {
 			fmt.Println("<--error-->", err.Error())
@@ -66,14 +68,18 @@ func crawlActress(c *crawler.Crawl, actress crawler.PageItems) {
 			}
 			fmt.Println("<crawling actress: ", name, "no: ", item.No, ">")
 			detail, err := c.CrawlDetail(item.No, item.Thumb, item.Title)
+			if mode == "2" {
+				detail.Uncensored = true
+			} else {
+				detail.Uncensored = false
+			}
 			if err != nil {
 				fmt.Println("<--error-->", err.Error())
 				failedLog(err.Error(), "detail", item.No)
-				time.Sleep(30 * time.Second)
+				time.Sleep(15 * time.Second)
 				continue
 			}
-			collection := session.DB("bus").C("videos")
-			collection.Insert(detail)
+			createRecord(detail)
 			time.Sleep(time.Duration(rand.Intn(3)) * time.Second)
 		}
 		if len(pageItems) < 30 {
@@ -82,9 +88,17 @@ func crawlActress(c *crawler.Crawl, actress crawler.PageItems) {
 	}
 }
 
+func createRecord(video *schema.Video) bool {
+	session := db.CloneSession()
+	defer session.Close()
+	collection := session.DB("bus").C("videos")
+	collection.Insert(video)
+	return true
+}
+
 func checkCrawled(no string) bool {
 	session := db.CloneSession()
-	defer session.Clone()
+	defer session.Close()
 	video := &schema.Video{}
 	collection := session.DB("bus").C("videos")
 	collection.Find(bson.M{"no": no}).One(&video)

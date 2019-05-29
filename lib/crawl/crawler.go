@@ -87,13 +87,12 @@ func (c *Crawl) CrawlDetail(no string, thumb string, title string) (*schema.Vide
 	var err error
 	video := &schema.Video{}
 	detailURL := fmt.Sprintf("%s/%s", url, no)
-	soup.Get(detailURL)
-	res, err := soup.Get(detailURL)
+	resp, err := soup.Get(detailURL)
 	if err != nil {
 		return video, err
 	}
 
-	doc := soup.HTMLParse(res)
+	doc := soup.HTMLParse(resp)
 	details := doc.Find("div", "class", "container").Find("div", "class", "movie")
 	coverInfo := details.Find("div", "class", "screencap").Find("a").Attrs()
 	infos := details.Find("div", "class", "info").Children()
