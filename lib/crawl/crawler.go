@@ -2,6 +2,7 @@ package crawler
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -41,9 +42,16 @@ func (c *Crawl) CrawlActress(aURL string, page int) ([]ListItems, error) {
 	if err != nil {
 		return nil, err
 	}
-	doc := soup.HTMLParse(resp)
-	infos := doc.Find("div", "id", "waterfall").FindAll("a", "class", "movie-box")
 	list := []ListItems{}
+
+	doc := soup.HTMLParse(resp)
+
+	waterfall := doc.Find("div", "id", "waterfall")
+	if waterfall.Pointer == nil {
+		return nil, errors.New("invalid memory address or nil pointer dereference")
+	}
+	infos := waterfall.FindAll("a", "class", "movie-box")
+
 	for _, info := range infos {
 		thumbInfo := info.Find("div", "class", "photo-frame").Find("img").Attrs()
 		item := ListItems{
@@ -70,7 +78,11 @@ func (c *Crawl) CrawlPage(page int, mode string) ([]PageItems, error) {
 		return items, err
 	}
 	doc := soup.HTMLParse(resp)
-	infos := doc.Find("div", "id", "waterfall").FindAll("div", "class", "item")
+	waterfall := doc.Find("div", "id", "waterfall")
+	if waterfall.Pointer == nil {
+		return nil, errors.New("invalid memory address or nil pointer dereference")
+	}
+	infos := waterfall.FindAll("div", "class", "item")
 	for _, info := range infos {
 		link := info.Find("a").Attrs()
 		name := info.Find("div", "class", "photo-info").Find("span").Text()

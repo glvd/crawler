@@ -2,8 +2,8 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"math/rand"
-	"os"
 	"strconv"
 	"time"
 
@@ -22,7 +22,11 @@ var (
 func main() {
 	fmt.Println("选择爬虫模式: 1.有码 2.无码 默认：有码")
 	fmt.Scanln(&mode)
-
+	defer func() {
+		if err := recover(); err != nil {
+			log.Panic("<--panic error-->", err)
+		}
+	}()
 	c := new(crawler.Crawl)
 	fmt.Println("****start crawl****")
 	for page := 1; ; page++ {
@@ -41,7 +45,6 @@ func main() {
 			break
 		}
 	}
-	os.Exit(1)
 }
 
 func crawlActress(c *crawler.Crawl, actress crawler.PageItems) {
@@ -56,8 +59,13 @@ func crawlActress(c *crawler.Crawl, actress crawler.PageItems) {
 		if err != nil {
 			fmt.Println("<--error-->", err.Error())
 			failedLog(err.Error(), "page", strconv.Itoa(page))
+			if err.Error() == "invalid memory address or nil pointer dereference" {
+				break
+			} else {
+				continue
+			}
 			time.Sleep(10 * time.Second)
-			continue
+
 		}
 		for _, item := range pageItems {
 			checkRes := checkCrawled(item.No)
@@ -76,8 +84,13 @@ func crawlActress(c *crawler.Crawl, actress crawler.PageItems) {
 			if err != nil {
 				fmt.Println("<--error-->", err.Error())
 				failedLog(err.Error(), "detail", item.No)
+				if err.Error() == "invalid memory address or nil pointer dereference" {
+					break
+				} else {
+					continue
+				}
 				time.Sleep(15 * time.Second)
-				continue
+
 			}
 			createRecord(detail)
 			time.Sleep(time.Duration(rand.Intn(3)) * time.Second)
