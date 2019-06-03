@@ -105,7 +105,14 @@ func (c *Crawl) CrawlDetail(no string, thumb string, title string) (*schema.Vide
 	}
 
 	doc := soup.HTMLParse(resp)
-	details := doc.Find("div", "class", "container").Find("div", "class", "movie")
+	container := doc.Find("div", "class", "container")
+
+	if container.Pointer == nil {
+		return nil, errors.New("invalid memory address or nil pointer dereference")
+	}
+
+	details := container.Find("div", "class", "movie")
+
 	coverInfo := details.Find("div", "class", "screencap").Find("a").Attrs()
 	infos := details.Find("div", "class", "info").Children()
 

@@ -29,7 +29,7 @@ func main() {
 	}()
 	c := new(crawler.Crawl)
 	fmt.Println("****start crawl****")
-	for page := 1; ; page++ {
+	for page := 65; ; page++ {
 		actresses, err := c.CrawlPage(page, mode)
 		fmt.Println("<crawling page：", page, " items: ", len(actresses), ">")
 		if err != nil {
@@ -64,7 +64,6 @@ func crawlActress(c *crawler.Crawl, actress crawler.PageItems) {
 			} else {
 				continue
 			}
-			time.Sleep(10 * time.Second)
 
 		}
 		for _, item := range pageItems {
@@ -89,7 +88,6 @@ func crawlActress(c *crawler.Crawl, actress crawler.PageItems) {
 				} else {
 					continue
 				}
-				time.Sleep(15 * time.Second)
 
 			}
 			createRecord(detail)
