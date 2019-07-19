@@ -1,15 +1,17 @@
 package crawler
 
 import (
-	"encoding/base64"
+	"bytes"
+	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
+	"os"
 	"strings"
 
 	underscore "github.com/ahl5esoft/golang-underscore"
 	"github.com/anaskhan96/soup"
-	chromedp "github.com/crawler/lib/headless"
 	schema "github.com/crawler/schema"
 )
 
@@ -21,50 +23,108 @@ const (
 type Crawl struct {
 }
 
+// PageItems ...
+type PageItems struct {
+	URL  string
+	Name string
+}
+
 // ListItems ...
 type ListItems struct {
 	No    string
 	Thumb string
+	Title string
 }
 
-// CrawlPage ...
-func (c *Crawl) CrawlPage(page int) ([]ListItems, error) {
-	listURL := fmt.Sprintf("%s/page/%d", url, page)
+// CrawlActress ...
+func (c *Crawl) CrawlActress(aURL string, page int) ([]ListItems, error) {
+	listURL := fmt.Sprintf("%s/%d", aURL, page)
 	resp, err := soup.Get(listURL)
 	if err != nil {
 		return nil, err
 	}
-	doc := soup.HTMLParse(resp)
-	infos := doc.Find("div", "id", "waterfall").FindAll("a")
 	list := []ListItems{}
+
+	doc := soup.HTMLParse(resp)
+
+	waterfall := doc.Find("div", "id", "waterfall")
+	if waterfall.Pointer == nil {
+		return nil, errors.New("invalid memory address or nil pointer dereference")
+	}
+	infos := waterfall.FindAll("a", "class", "movie-box")
+
 	for _, info := range infos {
-		videoInfo := info.Find("div", "class", "photo-frame").Find("img").Attrs()
+		photoFrame := info.Find("div", "class", "photo-frame")
+		photoInfo := info.Find("div", "class", "photo-info")
+		if photoFrame.Pointer == nil || photoInfo.Pointer == nil {
+			continue
+		}
+		thumbInfo := photoFrame.Find("img").Attrs()
 		item := ListItems{
-			Thumb: videoInfo["src"],
-			No:    info.Find("div", "class", "photo-info").Find("date").Text(),
+			Thumb: thumbInfo["src"],
+			No:    photoInfo.Find("date").Text(),
+			Title: photoInfo.Find("span").Text(),
 		}
 		list = append(list, item)
 	}
 	return list, nil
 }
 
+// CrawlPage ...
+func (c *Crawl) CrawlPage(page int, mode string) ([]PageItems, error) {
+	items := []PageItems{}
+	var actressURL string
+	if mode == "2" {
+		actressURL = fmt.Sprintf("%s/uncensored/actresses/%d", url, page)
+	} else {
+		actressURL = fmt.Sprintf("%s/actresses/%d", url, page)
+	}
+	resp, err := soup.Get(actressURL)
+	if err != nil {
+		return items, err
+	}
+	doc := soup.HTMLParse(resp)
+	waterfall := doc.Find("div", "id", "waterfall")
+	if waterfall.Pointer == nil {
+		return nil, errors.New("invalid memory address or nil pointer dereference")
+	}
+	infos := waterfall.FindAll("div", "class", "item")
+	for _, info := range infos {
+		link := info.Find("a").Attrs()
+		name := info.Find("div", "class", "photo-info").Find("span").Text()
+		pageItem := PageItems{link["href"], name}
+
+		items = append(items, pageItem)
+	}
+
+	return items, nil
+}
+
 // CrawlDetail ...
-func (c *Crawl) CrawlDetail(no string, thumb string) (*schema.Video, error) {
+func (c *Crawl) CrawlDetail(no string, thumb string, title string) (*schema.Video, error) {
 	var err error
 	video := &schema.Video{}
 	detailURL := fmt.Sprintf("%s/%s", url, no)
-	res, err := chromedp.LoadHTML(detailURL)
+	resp, err := soup.Get(detailURL)
 	if err != nil {
 		return video, err
 	}
 
-	doc := soup.HTMLParse(res)
-	details := doc.Find("div", "class", "container").Find("div", "class", "movie")
+	doc := soup.HTMLParse(resp)
+	container := doc.Find("div", "class", "container")
+
+	if container.Pointer == nil {
+		return nil, errors.New("invalid memory address or nil pointer dereference")
+	}
+
+	details := container.Find("div", "class", "movie")
+
 	coverInfo := details.Find("div", "class", "screencap").Find("a").Attrs()
 	infos := details.Find("div", "class", "info").Children()
-	magnetInfo := doc.Find("div", "class", "container").Find("table", "id", "magnet-table").FindAll("a")
-	video.Thumb, err = getImg(thumb)
-	video.Cover, err = getImg(coverInfo["href"])
+
+	video.Thumb, err = getImg(thumb, no, "thumb")
+	video.Cover, err = getImg(coverInfo["href"], no, "poster")
+	video.Title = title
 	video.Tags = buildDesc(details.FindAll("span", "class", "genre"))
 	video.Stars = buildDesc(details.FindAll("div", "class", "star-name"))
 	for _, info := range infos {
@@ -81,15 +141,68 @@ func (c *Crawl) CrawlDetail(no string, thumb string) (*schema.Video, error) {
 	return video, err
 }
 
-func getImg(url string) (string, error) {
+// Search ...
+func (c *Crawl) Search(bangumi string) ([]ListItems, error) {
+	searchURL := fmt.Sprintf("%s/%s/%s", url, "search", bangumi)
+	list := []ListItems{}
+
+	resp, err := soup.Get(searchURL)
+	if err != nil {
+		return list, err
+	}
+
+	doc := soup.HTMLParse(resp)
+	waterfall := doc.Find("div", "id", "waterfall")
+	if waterfall.Pointer == nil {
+		return nil, errors.New("invalid memory address or nil pointer dereference")
+	}
+	infos := waterfall.FindAll("a", "class", "movie-box")
+
+	for _, info := range infos {
+		photoFrame := info.Find("div", "class", "photo-frame")
+		photoInfo := info.Find("div", "class", "photo-info")
+		if photoFrame.Pointer == nil || photoInfo.Pointer == nil {
+			continue
+		}
+		thumbInfo := photoFrame.Find("img").Attrs()
+		item := ListItems{
+			Thumb: thumbInfo["src"],
+			No:    photoInfo.Find("date").Text(),
+			Title: photoInfo.Find("span").Text(),
+		}
+		list = append(list, item)
+	}
+	return list, nil
+}
+
+func getImg(url string, no string, t string) (string, error) {
 	resp, err := http.Get(url)
 	if err != nil {
 		return "", err
 	}
 	defer resp.Body.Close()
+	dir := fmt.Sprintf("images/%s", no)
+	err = makeDir(dir)
+	fileName := fmt.Sprintf("%s/%s.jpg", dir, t)
+
+	out, err := os.Create(fileName)
+	defer out.Close()
 	pix, err := ioutil.ReadAll(resp.Body)
-	encodeString := base64.StdEncoding.EncodeToString(pix)
-	return fmt.Sprintf("data:image/png;base64,%s", encodeString), err
+	_, err = io.Copy(out, bytes.NewReader(pix))
+
+	return fileName, err
+}
+
+func makeDir(dir string) error {
+
+	// check
+	if _, err := os.Stat(dir); err != nil {
+		err := os.MkdirAll(dir, 0711)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func buildDesc(v []soup.Root) []string {

@@ -3,6 +3,7 @@ package schema
 // Video ...
 type Video struct {
 	No          string   `bson:"no"`
+	Title       string   `bson:"title"`
 	Thumb       string   `bson:"thumb"`
 	Cover       string   `bson:"cover"`
 	Date        string   `bson:"date"`
@@ -14,6 +15,7 @@ type Video struct {
 	Tags        []string `bson:"tags"`
 	Stars       []string `bson:"stars"`
 	MagnetLinks []string `bson:"magnetLinks"`
+	Uncensored  bool     `bson:"uncensored"`
 }
 
 // Stars ...
