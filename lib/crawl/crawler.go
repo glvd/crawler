@@ -53,11 +53,16 @@ func (c *Crawl) CrawlActress(aURL string, page int) ([]ListItems, error) {
 	infos := waterfall.FindAll("a", "class", "movie-box")
 
 	for _, info := range infos {
-		thumbInfo := info.Find("div", "class", "photo-frame").Find("img").Attrs()
+		photoFrame := info.Find("div", "class", "photo-frame")
+		photoInfo := info.Find("div", "class", "photo-info")
+		if photoFrame.Pointer == nil || photoInfo.Pointer == nil {
+			continue
+		}
+		thumbInfo := photoFrame.Find("img").Attrs()
 		item := ListItems{
 			Thumb: thumbInfo["src"],
-			No:    info.Find("div", "class", "photo-info").Find("date").Text(),
-			Title: info.Find("div", "class", "photo-info").Find("span").Text(),
+			No:    photoInfo.Find("date").Text(),
+			Title: photoInfo.Find("span").Text(),
 		}
 		list = append(list, item)
 	}
@@ -125,6 +130,40 @@ func (c *Crawl) CrawlDetail(no string, thumb string, title string) (*schema.Vide
 		labelMatch(info, video)
 	}
 	return video, err
+}
+
+// Search ...
+func (c *Crawl) Search(bangumi string) ([]ListItems, error) {
+	searchURL := fmt.Sprintf("%s/%s/%s", url, "search", bangumi)
+	list := []ListItems{}
+
+	resp, err := soup.Get(searchURL)
+	if err != nil {
+		return list, err
+	}
+
+	doc := soup.HTMLParse(resp)
+	waterfall := doc.Find("div", "id", "waterfall")
+	if waterfall.Pointer == nil {
+		return nil, errors.New("invalid memory address or nil pointer dereference")
+	}
+	infos := waterfall.FindAll("a", "class", "movie-box")
+
+	for _, info := range infos {
+		photoFrame := info.Find("div", "class", "photo-frame")
+		photoInfo := info.Find("div", "class", "photo-info")
+		if photoFrame.Pointer == nil || photoInfo.Pointer == nil {
+			continue
+		}
+		thumbInfo := photoFrame.Find("img").Attrs()
+		item := ListItems{
+			Thumb: thumbInfo["src"],
+			No:    photoInfo.Find("date").Text(),
+			Title: photoInfo.Find("span").Text(),
+		}
+		list = append(list, item)
+	}
+	return list, nil
 }
 
 func getImg(url string, no string, t string) (string, error) {
