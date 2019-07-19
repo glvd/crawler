@@ -10,7 +10,6 @@ import (
 	"os"
 	"strings"
 
-	underscore "github.com/ahl5esoft/golang-underscore"
 	"github.com/anaskhan96/soup"
 	schema "github.com/crawler/schema"
 )
@@ -130,14 +129,7 @@ func (c *Crawl) CrawlDetail(no string, thumb string, title string) (*schema.Vide
 	for _, info := range infos {
 		labelMatch(info, video)
 	}
-	var magnetLinks []string
-	for _, magnetLink := range magnetInfo {
-		attr := magnetLink.Attrs()
-		if attr["href"] != "" {
-			magnetLinks = append(magnetLinks, attr["href"])
-		}
-	}
-	underscore.Chain(magnetLinks).Uniq(nil).Value(&video.MagnetLinks)
+
 	return video, err
 }
 

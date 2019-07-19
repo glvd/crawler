@@ -24,7 +24,7 @@ var (
 
 func main() {
 	// choose run mode
-	fmt.Println("选择运行方式：1.全量 2.定量 默认：全量")
+	fmt.Println("选择运行方式：1.全量 2.查询 默认：全量")
 	fmt.Scanln(&method)
 	if method == "2" {
 		fmt.Println("请输入要爬的番号，以逗号隔开: ")
@@ -97,6 +97,7 @@ func main() {
 			}
 		}
 	}
+	fmt.Println("完成啦")
 }
 
 func crawlActress(c *crawler.Crawl, actress crawler.PageItems) {
