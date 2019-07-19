@@ -46,39 +46,7 @@ func main() {
 
 	fmt.Println("****start crawl****")
 	if method == "2" {
-		inputs := strings.Split(inputBangumi, ",")
-		for _, input := range inputs {
-			log.Println("searching bangumi", input)
-			items, err := c.Search(input)
-			if err != nil {
-				fmt.Println("<--error-->", err.Error())
-				failedLog(err.Error(), "search", input)
-				continue
-			}
-
-			for _, item := range items {
-				checkRes := checkCrawled(item.No)
-
-				fmt.Println("<crawling bangumi: ", item.No, ">")
-				detail, err := c.CrawlDetail(item.No, item.Thumb, item.Title)
-				if err != nil {
-					fmt.Println("<--error-->", err.Error())
-					failedLog(err.Error(), "detail", item.No)
-					if err.Error() == "invalid memory address or nil pointer dereference" {
-						break
-					} else {
-						continue
-					}
-
-				}
-				detail.Uncensored = false
-				if checkRes == false {
-					createRecord(detail)
-				}
-
-				time.Sleep(time.Duration(rand.Intn(2)) * time.Second)
-			}
-		}
+		search(c)
 	} else {
 		for page := 1; ; page++ {
 			actresses, err := c.CrawlPage(page, mode)
@@ -154,6 +122,42 @@ func crawlActress(c *crawler.Crawl, actress crawler.PageItems) {
 		}
 		if len(pageItems) < 30 {
 			break
+		}
+	}
+}
+
+func search(c *crawler.Crawl) {
+	inputs := strings.Split(inputBangumi, ",")
+	for _, input := range inputs {
+		log.Println("searching bangumi", input)
+		items, err := c.Search(input)
+		if err != nil {
+			fmt.Println("<--error-->", err.Error())
+			failedLog(err.Error(), "search", input)
+			continue
+		}
+
+		for _, item := range items {
+			checkRes := checkCrawled(item.No)
+
+			fmt.Println("<crawling bangumi: ", item.No, ">")
+			detail, err := c.CrawlDetail(item.No, item.Thumb, item.Title)
+			if err != nil {
+				fmt.Println("<--error-->", err.Error())
+				failedLog(err.Error(), "detail", item.No)
+				if err.Error() == "invalid memory address or nil pointer dereference" {
+					break
+				} else {
+					continue
+				}
+
+			}
+			detail.Uncensored = false
+			if checkRes == false {
+				createRecord(detail)
+			}
+
+			time.Sleep(time.Duration(rand.Intn(2)) * time.Second)
 		}
 	}
 }
