@@ -288,7 +288,7 @@ func starLabelMatch(dom soup.Root, star *schema.Star) {
 		case "愛好":
 			star.Hobby = value
 		case "出生地":
-			star.Birthday = value
+			star.BirthPlace = value
 		}
 	}
 
