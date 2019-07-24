@@ -69,6 +69,39 @@ func (c *Crawl) CrawlActress(aURL string, page int) ([]ListItems, error) {
 	return list, nil
 }
 
+// CrawlStarInfo ...
+func (c *Crawl) CrawlStarInfo(aURL string, mode string) (*schema.Star, error) {
+	listURL := fmt.Sprintf("%s", aURL)
+	resp, err := soup.Get(listURL)
+	star := &schema.Star{}
+	if err != nil {
+		return star, err
+	}
+	// extract html dom
+	doc := soup.HTMLParse(resp)
+	waterfall := doc.Find("div", "id", "waterfall")
+	if waterfall.Pointer == nil {
+		return star, errors.New("invalid memory address or nil pointer dereference")
+	}
+	info := waterfall.Find("div", "class", "avatar-box")
+	photoFrame := info.Find("div", "class", "photo-frame")
+	photoInfo := info.Find("div", "class", "photo-info")
+	thumbInfo := photoFrame.Find("img").Attrs()
+	details := photoInfo.Children()
+	// build star info
+	star.Name = details[1].FullText()
+	star.Avatar, err = getImg(thumbInfo["src"], star.Name, "avatar")
+	if mode == "2" {
+		star.Uncensored = true
+	} else {
+		star.Uncensored = false
+	}
+	for i := 1; i < len(details); i++ {
+		starLabelMatch(details[i], star)
+	}
+	return star, nil
+}
+
 // CrawlPage ...
 func (c *Crawl) CrawlPage(page int, mode string) ([]PageItems, error) {
 	items := []PageItems{}
@@ -127,7 +160,7 @@ func (c *Crawl) CrawlDetail(no string, thumb string, title string) (*schema.Vide
 	video.Tags = buildDesc(details.FindAll("span", "class", "genre"))
 	video.Stars = buildDesc(details.FindAll("div", "class", "star-name"))
 	for _, info := range infos {
-		labelMatch(info, video)
+		videoLabelMatch(info, video)
 	}
 
 	return video, err
@@ -206,7 +239,7 @@ func buildDesc(v []soup.Root) []string {
 	return descs
 }
 
-func labelMatch(dom soup.Root, video *schema.Video) {
+func videoLabelMatch(dom soup.Root, video *schema.Video) {
 	texts := dom.FullText()
 	t := strings.Split(texts, ":")
 	if len(t) == 2 {
@@ -227,6 +260,35 @@ func labelMatch(dom soup.Root, video *schema.Video) {
 			video.Publisher = value
 		case "系列":
 			video.Series = value
+		}
+	}
+}
+
+func starLabelMatch(dom soup.Root, star *schema.Star) {
+	texts := dom.FullText()
+	t := strings.Split(texts, ":")
+	if len(t) == 2 {
+		field := strings.Replace(strings.TrimSpace(t[0]), "\n", "", -1)
+		value := strings.Replace(strings.TrimSpace(t[1]), "\n", "", -1)
+		switch field {
+		case "生日":
+			star.Birthday = value
+		case "年齡":
+			star.Age = value
+		case "身高":
+			star.Height = value
+		case "罩杯":
+			star.Cup = value
+		case "胸圍":
+			star.Chest = value
+		case "腰圍":
+			star.Waist = value
+		case "臀圍":
+			star.Hipline = value
+		case "愛好":
+			star.Hobby = value
+		case "出生地":
+			star.Birthday = value
 		}
 	}
 

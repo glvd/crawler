@@ -24,7 +24,7 @@ var (
 
 func main() {
 	// choose run mode
-	fmt.Println("选择运行方式：1.全量 2.查询 默认：全量")
+	fmt.Println("选择运行方式：1.全量 2.番号查询 3.演员 默认：全量")
 	fmt.Scanln(&method)
 	if method == "2" {
 		fmt.Println("请输入要爬的番号，以逗号隔开: ")
@@ -58,7 +58,21 @@ func main() {
 				continue
 			}
 			for _, actress := range actresses {
-				crawlActress(c, actress)
+				fmt.Println("<crawling actress: ", actress.Name, ">")
+				if method == "1" {
+					crawlActressVideos(c, actress)
+				}
+				if method == "3" {
+					star, err := c.CrawlStarInfo(actress.URL, mode)
+					checkRes := checkStarCrawled(star.Name)
+					if err != nil {
+						fmt.Println("<--error-->", err.Error())
+						failedLog(err.Error(), "star", actress.Name)
+					}
+					if checkRes == false {
+						createStar(star)
+					}
+				}
 			}
 			if len(actresses) < 50 {
 				break
@@ -68,10 +82,9 @@ func main() {
 	fmt.Println("完成啦")
 }
 
-func crawlActress(c *crawler.Crawl, actress crawler.PageItems) {
+func crawlActressVideos(c *crawler.Crawl, actress crawler.PageItems) {
 	url := actress.URL
 	name := actress.Name
-	fmt.Println("<crawling actress: ", name, ">")
 
 	for page := 1; ; page++ {
 		if skipCount >= 20 {
@@ -90,7 +103,7 @@ func crawlActress(c *crawler.Crawl, actress crawler.PageItems) {
 
 		}
 		for _, item := range pageItems {
-			checkRes := checkCrawled(item.No)
+			checkRes := checkVideoCrawled(item.No)
 			if skipCount >= 20 {
 				fmt.Println("<crawling actress: ", name, " skip>")
 				break
@@ -110,14 +123,13 @@ func crawlActress(c *crawler.Crawl, actress crawler.PageItems) {
 				} else {
 					continue
 				}
-
 			}
 			if mode == "2" {
 				detail.Uncensored = true
 			} else {
 				detail.Uncensored = false
 			}
-			createRecord(detail)
+			createVideo(detail)
 			time.Sleep(time.Duration(rand.Intn(2)) * time.Second)
 		}
 		if len(pageItems) < 30 {
@@ -138,7 +150,7 @@ func search(c *crawler.Crawl) {
 		}
 
 		for _, item := range items {
-			checkRes := checkCrawled(item.No)
+			checkRes := checkVideoCrawled(item.No)
 
 			fmt.Println("<crawling bangumi: ", item.No, ">")
 			detail, err := c.CrawlDetail(item.No, item.Thumb, item.Title)
@@ -154,7 +166,7 @@ func search(c *crawler.Crawl) {
 			}
 			detail.Uncensored = false
 			if checkRes == false {
-				createRecord(detail)
+				createVideo(detail)
 			}
 
 			time.Sleep(time.Duration(rand.Intn(2)) * time.Second)
@@ -162,7 +174,7 @@ func search(c *crawler.Crawl) {
 	}
 }
 
-func createRecord(video *schema.Video) bool {
+func createVideo(video *schema.Video) bool {
 	session := db.CloneSession()
 	defer session.Close()
 	collection := session.DB("bus").C("videos")
@@ -170,13 +182,33 @@ func createRecord(video *schema.Video) bool {
 	return true
 }
 
-func checkCrawled(no string) bool {
+func createStar(star *schema.Star) bool {
+	session := db.CloneSession()
+	defer session.Close()
+	collection := session.DB("bus").C("stars")
+	collection.Insert(star)
+	return true
+}
+
+func checkVideoCrawled(no string) bool {
 	session := db.CloneSession()
 	defer session.Close()
 	video := &schema.Video{}
 	collection := session.DB("bus").C("videos")
 	collection.Find(bson.M{"no": no}).One(&video)
 	if video.No == no {
+		return true
+	}
+	return false
+}
+
+func checkStarCrawled(name string) bool {
+	session := db.CloneSession()
+	defer session.Close()
+	star := &schema.Star{}
+	collection := session.DB("bus").C("stars")
+	collection.Find(bson.M{"name": name}).One(&star)
+	if star.Name == name {
 		return true
 	}
 	return false

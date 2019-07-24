@@ -19,11 +19,19 @@ type Video struct {
 }
 
 // Stars ...
-type Stars struct {
-	Name   string
-	Age    int
-	Avatar string
-	Videos []string
+type Star struct {
+	Name       string `bson:"name"`
+	Birthday   string `bson:"birthday"`
+	Age        string `bson:"age"`
+	Avatar     string `bson:"avatar"`
+	Height     string `bson:"height"`
+	Cup        string `bson:"cup"`
+	Chest      string `bson:"chest"`
+	Waist      string `bson:"waist"`
+	Hipline    string `bson:"hipline"`
+	BirthPlace string `bson:"birthPlace"`
+	Hobby      string `bson:"hobby"`
+	Uncensored bool   `bson:"uncensored"`
 }
 
 // Failed ...
