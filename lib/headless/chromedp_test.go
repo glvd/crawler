@@ -3,7 +3,7 @@ package chromedp_test
 import (
 	"testing"
 
-	chromedp "github.com/crawler/lib/headless"
+	chromedp "github.com/crawler/crawler/lib/headless"
 )
 
 const (

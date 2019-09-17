@@ -3,7 +3,7 @@ package crawler_test
 import (
 	"testing"
 
-	crawler "github.com/crawler/lib/crawl"
+	crawler "github.com/crawler/crawler/lib/crawl"
 )
 
 const (

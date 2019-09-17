@@ -11,7 +11,7 @@ import (
 	"strings"
 
 	"github.com/anaskhan96/soup"
-	schema "github.com/crawler/schema"
+	schema "github.com/crawler/crawler/schema"
 )
 
 const (

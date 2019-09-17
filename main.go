@@ -8,9 +8,9 @@ import (
 	"strings"
 	"time"
 
-	db "github.com/crawler/db"
-	crawler "github.com/crawler/lib/crawl"
-	schema "github.com/crawler/schema"
+	db "github.com/crawler/crawler/db"
+	crawler "github.com/crawler/crawler/lib/crawl"
+	schema "github.com/crawler/crawler/schema"
 	"github.com/globalsign/mgo/bson"
 )
 
